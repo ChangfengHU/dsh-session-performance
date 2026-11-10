@@ -1,22 +1,33 @@
 # DSH Session Performance
 
-A small, reversible host plugin for DeepSeek Harness. Session lists carry navigation metadata, not the full prompt and tool schemas for every conversation.
+A reversible Web-profile plugin for DeepSeek Harness. Chat starts with small session summaries and a lightweight history projection. Diagnostic and administration interfaces load when opened.
 
-## What It Changes
+## Capabilities
 
-The native session.list response retains every session, its title, timestamps, running/blank status, workspace path, agent preset and lineage. Projection data is restricted to title, sessionListMetadata and subagent. The native gateway still performs its normal visibility, persistence and error handling.
+- Session sidebar: real server cursors, 30 rows per page, stable timestamp/ID ordering and a Load older sessions action. Search and old deep links hydrate visible summaries and their parents. Reconnect retains already loaded rows while rechecking native visibility.
+- Chat history: retains every event sequence, tool result and approval event, but defers request-header prompt/tool payloads and Context projections. It does not rewrite the canonical session log.
+- Context and Trajectory: first opening fetches complete evidence through the native history gateway, then loads the full interface. Each newly opened session is hydrated independently. Native Trace retains its own existing on-demand data path.
+- Context, Trajectory, Plugin Station and Skills/MCP interfaces use small placeholder registrations at startup. Their actual classic-CJS bundles load once through the existing module system and activate in a native Cordis fiber. Failed loads have an explicit Retry action.
+- The existing /context command remains available before the Context interface has loaded.
 
-This release does not claim server-side list pagination. It preserves native message-history pagination and full selected-session history, including Context and Trace data. Cursor pagination and explicit diagnostic reads are separate work and must preserve search, direct links and reconnect behavior.
+## Installation And Compatibility
 
-## Install
+Install into an existing DSH Web profile with its normal plugin installer and restart while no turn is active. Tested against DSH 0.1.1-rc.2. No additional server, database, container or worktree is needed.
 
-Install the package into the existing DSH Web profile using the normal plugin installer, then restart when no turn is active. No new server, database or browser asset is added.
+The plugin uses the public clientModules clientPath/graph, webServer tapIndex/route and trusted Connection RPC interfaces. A narrow, anchor-validated compatibility adapter extends the served runtime bundle with paged reads and explicit diagnostics hydration. Installed native files are never overwritten. Unsupported upstream bundle shapes fail explicitly rather than silently applying a partial transformation; validate upgrades before deploying them.
+
+The native visibility inventory is still authoritative. Pagination slices its lightweight summaries; this is not a replacement database index or a new session persistence backend. Concurrent list reads share their in-flight inventory read, without caching stale running/authorization state.
+
+Uninstalling the plugin restores native boot URLs and native reads. Canonical history, Context content, prompts, model credentials, main-model selection, filesystem permissions and approvals remain unchanged.
 
 ## Development
 
-Run npm test and npm run check. Tests cover metadata fidelity, no mutation, errors, 1000 summaries, untouched history and disposal. All source and Git operations for this deployment run on Linux 114.
+Run `npm test` and `npm run check`. Set `DSH_INSTALL_ROOT` to the installed DSH package root to run the actual-runtime adapter integration test as well. Tests cover 1000 rows, cursor ties, insertion, direct-link lineage, search, reconnect, visibility errors, event fidelity, lazy-load deduplication and awaited lifecycle disposal.
 
-## Security And Data
+All source edits, tests, builds and Git operations for this deployment are performed on Linux. This package contains no host addresses, keys or business session data.
 
-No session data is deleted or rewritten. No credentials, models, prompts, filesystem permissions or API authentication are changed. Unloading the plugin restores its response boundary.
+## Related Optimization
 
+`dsh-claude-translate` 0.3.4 returns at most eight recent cached display bodies within a 64 KiB budget alongside changed Chat metadata. Larger and older bodies retain lazy batch loading. `dsh-plugin-station` 1.3.5 excludes the four deferred interfaces from preloading and prioritizes Chat-critical modules. Other small modules still required by the native boot barrier are preloaded in parallel; the native loader adapter also resolves independent dependency arrivals concurrently.
+
+See ACCEPTANCE.md for measurements and verification scope. Network/tunnel latency and actual model inference time are separate from page-loading performance.

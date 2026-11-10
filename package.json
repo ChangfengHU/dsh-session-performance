@@ -1,23 +1,26 @@
 {
   "name": "dsh-session-performance",
-  "version": "0.1.0",
-  "description": "Small session summaries for DeepSeek Harness without changing selected-session diagnostics.",
+  "version": "0.2.0",
+  "description": "Paged sessions, lightweight Chat reads and on-demand diagnostic interfaces for DSH.",
   "license": "MIT",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
     "./core": "./src/summary.js",
+    "./client": "./client/index.js",
     "./package.json": "./package.json",
     "./cordis.patch.yml": "./cordis.patch.yml"
   },
   "files": [
     "src",
+    "client",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
   ],
   "dsh": {
+    "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-runtime", "@deepseek-ai/dsh-client-ui-sidebar"] },
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
